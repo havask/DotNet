@@ -1,0 +1,49 @@
+This GitHub Action will trigger when you push to the main branch, build your project, create the Docker image, 
+and deploy it to the Azure Web App service.
+
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build and Publish Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: your-image-name:latest
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: your-app-name
+          images: your-image-name:latest
+          multi-container-config-file: |
+            {
+              "version": "1.0",
+              "containers": {
+                "your-container-name": {
+                  "type": "docker",
+                  "image": "your-image-name:latest",
+                  "ports": [
+                    {
+                      "protocol": "tcp",
+                      "port": 80
+                    }
+                  ]
+                }
+              }
+            }
+          multi-container: true
+        env:
+          DOCKER_REGISTRY_SERVER_USERNAME: ${{ secrets.DOCKER_REGISTRY_SERVER_USERNAME }}
+          DOCKER_REGISTRY_SERVER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_SERVER_PASSWORD }}
